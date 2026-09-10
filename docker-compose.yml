@@ -1,0 +1,19 @@
+version: "3.9"
+
+# Optional: only needed if you want a real local Postgres instead of the
+# SQLite fallback (USE_SQLITE_FALLBACK=1 in .env). See docs/PLAYBOOK.md
+# "Running it" for both paths.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: novus
+      POSTGRES_PASSWORD: novus
+      POSTGRES_DB: novus_vibe
+    ports:
+      - "5432:5432"
+    volumes:
+      - novus_vibe_pgdata:/var/lib/postgresql/data
+
+volumes:
+  novus_vibe_pgdata:

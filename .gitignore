@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+storage/*.pdf
+*.egg-info/
+.pytest_cache/
+.DS_Store
+novus_vibe.db
+~$*

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fund Screen PDF Copilot</title>
+<style>
+  :root{
+    --bg:#F5F6F7; --surface:#FFFFFF; --surface-2:#EEF0F2;
+    --ink:#1B2430; --ink-muted:#5B6675; --line:#DCE1E6;
+    --accent:#1D5FB8; --accent-ink:#0B3A73; --accent-soft:#E3EDFB;
+    --warn:#9A5B0A; --warn-soft:#F6E8D2;
+    --crit:#A3312A; --crit-soft:#F6E1DE;
+    --ok:#1E7A4C; --ok-soft:#DFF0E6;
+    --mono:'SFMono-Regular',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --shadow:0 1px 2px rgba(20,30,40,.05),0 8px 24px rgba(20,30,40,.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5;}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px;}
+  h1{font-size:24px;margin:0 0 4px;}
+  .subtitle{color:var(--ink-muted);margin:0 0 28px;font-size:14px;max-width:70ch;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--accent-ink);background:var(--accent-soft);display:inline-block;padding:3px 9px;
+    border-radius:100px;margin-bottom:10px;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+  .stat{background:var(--surface);padding:14px 16px;}
+  .stat .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-muted);}
+  .stat .v{font-size:19px;font-weight:600;margin-top:4px;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;
+    box-shadow:var(--shadow);margin-bottom:24px;}
+  .card h2{font-size:16px;margin:0 0 14px;}
+
+  form{display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:end;}
+  label{display:block;font-size:12px;color:var(--ink-muted);margin-bottom:4px;}
+  input[type=text],input[type=url]{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;
+    font-size:14px;font-family:var(--sans);background:var(--surface-2);}
+  input:focus{outline:2px solid var(--accent);outline-offset:1px;background:var(--surface);}
+  button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 18px;
+    font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  button:hover{background:var(--accent-ink);}
+  button:disabled{background:var(--ink-muted);cursor:wait;}
+  .hint{grid-column:1/-1;color:var(--ink-muted);font-size:12px;margin-top:2px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-muted);padding:8px 10px;border-bottom:1px solid var(--line);}
+  td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr.row:hover{background:var(--surface-2);cursor:pointer;}
+  .url-cell{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-muted);font-family:var(--mono);font-size:12px;}
+
+  .badge{font-family:var(--mono);font-size:11px;letter-spacing:.03em;padding:3px 8px;border-radius:100px;display:inline-block;}
+  .badge.succeeded{background:var(--ok-soft);color:var(--ok);}
+  .badge.needs_review{background:var(--warn-soft);color:var(--warn);}
+  .badge.failed{background:var(--crit-soft);color:var(--crit);}
+  .badge.pending,.badge.in_progress{background:var(--surface-2);color:var(--ink-muted);}
+
+  .empty{color:var(--ink-muted);font-size:13px;padding:20px 0;text-align:center;}
+
+  .overlay{position:fixed;inset:0;background:rgba(20,25,35,.45);display:none;align-items:flex-start;
+    justify-content:center;padding:40px 16px;z-index:10;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--surface);border-radius:14px;max-width:640px;width:100%;padding:26px 28px;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:85vh;overflow-y:auto;}
+  .modal h3{margin:0 0 2px;font-size:17px;}
+  .modal .muted{color:var(--ink-muted);font-size:12.5px;margin-bottom:16px;word-break:break-all;}
+  .modal .close{float:right;background:none;color:var(--ink-muted);padding:4px 8px;font-size:18px;}
+  .attempt{border-left:2px solid var(--line);padding:6px 0 6px 14px;margin-bottom:2px;font-size:13px;}
+  .attempt .verdict{font-family:var(--mono);font-size:11px;text-transform:uppercase;color:var(--ink-muted);}
+  .actions{margin-top:18px;display:flex;gap:10px;}
+  .actions a, .actions button{text-decoration:none;font-size:13px;padding:8px 14px;}
+  .btn-secondary{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:8px;}
+
+  footer{margin-top:40px;color:var(--ink-muted);font-size:12px;border-top:1px solid var(--line);padding-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">WealthOS &middot; prototype</div>
+  <h1>Fund Screen PDF Copilot</h1>
+  <p class="subtitle">Paste the URL of a fund screener/listing page. A generation agent turns it into a durable PDF snapshot for the file; a controller agent keeps this dashboard in sync with what's in the database. See <code>docs/PLAYBOOK.md</code> for the architecture and the reasoning behind it.</p>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="card">
+    <h2>Screen a fund listing page</h2>
+    <form id="new-request-form">
+      <div>
+        <label for="label">Label</label>
+        <input type="text" id="label" placeholder="Q3 large-cap growth screen" required maxlength="200" />
+      </div>
+      <div>
+        <label for="source_url">Fund listing page URL</label>
+        <input type="url" id="source_url" placeholder="https://example.com/funds/screen?..." required />
+      </div>
+      <button type="submit" id="submit-btn">Generate PDF</button>
+      <div class="hint">Runs synchronously in this prototype (a few seconds) so you can watch the status change below. In production this would be queued -- see docs/PLAYBOOK.md, "Scaling &amp; future-proofing".</div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Requests</h2>
+    <table>
+      <thead>
+        <tr><th>Label</th><th>Source</th><th>Status</th><th>Verdict</th><th>Retries</th><th>Requested</th></tr>
+      </thead>
+      <tbody id="requests-body"></tbody>
+    </table>
+    <div class="empty" id="empty-msg" style="display:none;">No requests yet -- submit one above.</div>
+  </div>
+
+  <footer>Prototype for an FDE-style interview at NovusMinds AI (WealthOS). Not affiliated with NovusMinds.</footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="close" id="close-modal">&times;</button>
+    <h3 id="modal-title"></h3>
+    <div class="muted" id="modal-url"></div>
+    <div id="modal-body"></div>
+    <div class="actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<script>
+const $ = (sel) => document.querySelector(sel);
+
+function badge(status) {
+  const label = status.replace('_', ' ');
+  return `<span class="badge ${status}">${label}</span>`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadStats() {
+  const stats = await fetch('/api/stats').then(r => r.json());
+  const cells = [
+    ['Total', stats.total_requests],
+    ['Succeeded', stats.succeeded],
+    ['Needs review', stats.needs_review],
+    ['Failed', stats.failed],
+    ['Success rate', stats.success_rate_pct + '%'],
+    ['Avg retries', stats.avg_retry_count],
+    ['Avg latency', stats.avg_latency_ms != null ? Math.round(stats.avg_latency_ms) + ' ms' : '—'],
+  ];
+  $('#stats').innerHTML = cells.map(([k, v]) => `
+    <div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>
+  `).join('');
+}
+
+async function loadRequests() {
+  const rows = await fetch('/api/screen-requests').then(r => r.json());
+  const body = $('#requests-body');
+  $('#empty-msg').style.display = rows.length ? 'none' : 'block';
+  body.innerHTML = rows.map(r => `
+    <tr class="row" data-id="${r.id}">
+      <td>${escapeHtml(r.label)}</td>
+      <td class="url-cell" title="${escapeHtml(r.source_url)}">${escapeHtml(r.source_url)}</td>
+      <td>${badge(r.status)}</td>
+      <td>${r.reflection_verdict ? badge(r.reflection_verdict) : '—'}</td>
+      <td>${r.retry_count}</td>
+      <td>${fmtDate(r.requested_at)}</td>
+    </tr>
+  `).join('');
+  body.querySelectorAll('tr.row').forEach(tr => {
+    tr.addEventListener('click', () => openDetail(tr.dataset.id));
+  });
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+async function openDetail(id) {
+  const r = await fetch(`/api/screen-requests/${id}`).then(res => res.json());
+  $('#modal-title').textContent = r.label;
+  $('#modal-url').textContent = r.source_url;
+
+  let body = `<p>${badge(r.status)} ${r.reflection_verdict ? badge(r.reflection_verdict) : ''} &nbsp; <span class="muted">provider: ${r.provider_name || '—'} &middot; ${r.page_count ?? '?'} page(s) &middot; ${r.file_size_bytes ?? '?'} bytes &middot; ${r.latency_ms ?? '?'} ms</span></p>`;
+  if (r.reflection_notes) {
+    body += `<p><strong>Reflection:</strong> ${escapeHtml(r.reflection_notes)}</p>`;
+  }
+  if (r.error_message) {
+    body += `<p><strong>Error:</strong> ${escapeHtml(r.error_message)}</p>`;
+  }
+  body += '<div><strong>Attempt log</strong>';
+  (r.attempt_log || []).forEach(a => {
+    body += `<div class="attempt"><span class="verdict">attempt ${a.attempt} &middot; ${a.action} &middot; ${a.verdict || ''}</span><br>${escapeHtml(a.detail)}</div>`;
+  });
+  body += '</div>';
+
+  $('#modal-body').innerHTML = body;
+
+  const actions = $('#modal-actions');
+  actions.innerHTML = '';
+  if (r.download_url) {
+    actions.innerHTML += `<a class="btn-secondary" href="${r.download_url}" target="_blank">View / download PDF</a>`;
+  }
+  $('#overlay').classList.add('open');
+}
+
+$('#close-modal').addEventListener('click', () => $('#overlay').classList.remove('open'));
+$('#overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') $('#overlay').classList.remove('open'); });
+
+$('#new-request-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('#submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  try {
+    const label = $('#label').value;
+    const source_url = $('#source_url').value;
+    const resp = await fetch('/api/screen-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label, source_url }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      alert('Request failed: ' + (err.detail || resp.statusText));
+    } else {
+      $('#new-request-form').reset();
+      await Promise.all([loadStats(), loadRequests()]);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate PDF';
+  }
+});
+
+loadStats();
+loadRequests();
+</script>
+</body>
+</html>
